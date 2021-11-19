@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'pl.edu.pw.mini.cadcam.pusn'
+version '1.0'
+
+targetCompatibility = JavaVersion.VERSION_17
+sourceCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
+    maven {
+        url = uri('https://maven.pkg.github.com/tomasz-herman/WindowBuilder')
+        credentials {
+            username = "token"
+            password = "\u0033\u0038\u0038\u0063\u0034\u0034\u0062\u0039\u0037\u0034\u0032\u0035\u0065\u0061\u0036\u0065\u0064\u0066\u0031\u0065\u0030\u0033\u0039\u0032\u0066\u0063\u0064\u0031\u0064\u0065\u0031\u0039\u0036\u0039\u0038\u0064\u0064\u0039\u0039\u0061"
+        }
+    }
+}
+
+def lwjglVersion = "3.2.3"
+def natives = "natives-linux"
+
+
+dependencies {
+    implementation "org.lwjgl:lwjgl:$lwjglVersion"
+    implementation "org.lwjgl:lwjgl-assimp:$lwjglVersion"
+
+    runtimeOnly "org.lwjgl:lwjgl:$lwjglVersion:$natives"
+    runtimeOnly "org.lwjgl:lwjgl-assimp:$lwjglVersion:$natives"
+
+    implementation "org.apache.commons:commons-text:1.9"
+
+    implementation 'org.joml:joml:1.10.2'
+    implementation 'org.jogamp.jogl:jogl-all-main:2.3.2'
+    implementation 'org.jogamp.gluegen:gluegen-rt-main:2.3.2'
+    implementation 'com.formdev:flatlaf:1.6.3'
+    implementation 'com.hermant:windowbuilder:1.0.2'
+    implementation 'com.intellij:forms_rt:7.0.3'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'org.swinglabs.swingx:swingx-core:1.6.5-1'
+    implementation 'com.google.guava:guava:31.0.1-jre'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation 'org.assertj:assertj-core:3.21.0'
+    testImplementation 'org.mockito:mockito-core:4.0.0'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+application {
+    getMainClass().set('pl.edu.pw.mini.cadcam.pusn.Main')
+}
+
+jar {
+    getManifest().getAttributes().put('Main-Class', 'pl.edu.pw.mini.cadcam.pusn.Main')
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it)}
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
