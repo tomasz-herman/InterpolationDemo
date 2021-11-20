@@ -15,6 +15,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import static com.jogamp.opengl.math.FloatUtil.PI;
+
 public class InterpolationController {
     private JComboBox<String> leftInterpolationCombo;
     private JComboBox<String> rightInterpolationCombo;
@@ -52,8 +54,21 @@ public class InterpolationController {
         endPositionButton.addActionListener(e -> new PositionController(endPosition::set, endPositionLabel::setText));
         endTimeButton.addActionListener(e -> new TimeController(t -> endTime = t, endTimeLabel::setText));
         interpolateButton.addActionListener(e -> {
-            if (setAnimation != null)
+            if (setAnimation != null) {
+                if (startRotation.x < 0) startRotation.x += 2 * PI;
+                if (endRotation.x < 0) endRotation.x += 2 * PI;
+                if (endRotation.x - startRotation.x > PI) endRotation.x -= 2 * PI;
+                if (startRotation.x - endRotation.x > PI) startRotation.x -= 2 * PI;
+                if (startRotation.y < 0) startRotation.y += 2 * PI;
+                if (endRotation.y < 0) endRotation.y += 2 * PI;
+                if (endRotation.y - startRotation.y > PI) endRotation.y -= 2 * PI;
+                if (startRotation.y - endRotation.y > PI) startRotation.y -= 2 * PI;
+                if (startRotation.z < 0) startRotation.z += 2 * PI;
+                if (endRotation.z < 0) endRotation.z += 2 * PI;
+                if (endRotation.z - startRotation.z > PI) endRotation.z -= 2 * PI;
+                if (startRotation.z - endRotation.z > PI) startRotation.z -= 2 * PI;
                 setAnimation.accept(new Interpolation(startTime, endTime, new Vector3f(startRotation), new Vector3f(endRotation), new Vector3f(startPosition), new Vector3f(endPosition)));
+            }
         });
         leftInterpolationCombo.addActionListener(e -> {
             switch (Objects.requireNonNull(leftInterpolationCombo.getSelectedItem()).toString()) {
