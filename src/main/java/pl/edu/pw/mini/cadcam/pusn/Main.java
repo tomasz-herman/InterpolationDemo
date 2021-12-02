@@ -15,7 +15,7 @@ public class Main {
                     .setContentPane(controller.getMainPane())
                     .setSize(1280, 720)
                     .setMinimumSize(320, 240)
-                    .setTitle("GModeling")
+                    .setTitle("Interpolation")
                     .setExitOnClose()
                     .buildFrame();
         });
