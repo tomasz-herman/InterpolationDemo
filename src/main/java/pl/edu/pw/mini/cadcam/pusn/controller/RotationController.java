@@ -61,6 +61,7 @@ public class RotationController {
                     ((Number) yQuaternionSpinner.getValue()).floatValue(),
                     ((Number) zQuaternionSpinner.getValue()).floatValue(),
                     ((Number) wQuaternionSpinner.getValue()).floatValue()).normalize();
+            if (!quaternion.isFinite()) return;
             xQuaternionSpinner.setValue(quaternion.x);
             yQuaternionSpinner.setValue(quaternion.y);
             zQuaternionSpinner.setValue(quaternion.z);
@@ -76,7 +77,8 @@ public class RotationController {
                 .buildDialog();
         okButton.addActionListener(e -> {
             if (getResult != null) getResult.accept(rotation);
-            if (getText != null) getText.accept("[%.2f, %.2f, %.2f]".formatted(rotation.x * 180 / PI, rotation.y * 180 / PI, rotation.z * 180 / PI));
+            if (getText != null)
+                getText.accept("[%.2f, %.2f, %.2f]".formatted(rotation.x * 180 / PI, rotation.y * 180 / PI, rotation.z * 180 / PI));
             dialog.dispose();
         });
         cancelButton.addActionListener(e -> dialog.dispose());
