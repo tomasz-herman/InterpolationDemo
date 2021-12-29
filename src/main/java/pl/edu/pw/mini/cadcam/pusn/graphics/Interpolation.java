@@ -73,4 +73,20 @@ public class Interpolation {
                 .translate(position)
                 .rotate(quaternion);
     }
+
+    public Vector3f getStartRotation() {
+        return startRotation;
+    }
+
+    public Vector3f getEndRotation() {
+        return endRotation;
+    }
+
+    public Vector3f getStartPosition() {
+        return startPosition;
+    }
+
+    public Vector3f getEndPosition() {
+        return endPosition;
+    }
 }

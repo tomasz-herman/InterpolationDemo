@@ -11,13 +11,12 @@ import pl.edu.pw.mini.cadcam.pusn.graphics.*;
 import pl.edu.pw.mini.cadcam.pusn.graphics.Renderer;
 import pl.edu.pw.mini.cadcam.pusn.model.Model;
 import pl.edu.pw.mini.cadcam.pusn.model.ModelLoader;
+import pl.edu.pw.mini.cadcam.pusn.model.Puma;
 
 import javax.swing.*;
 import java.awt.event.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-
-import static com.jogamp.opengl.math.FloatUtil.PI;
 
 public class GLController implements GLEventListener, MouseListener, MouseWheelListener, MouseMotionListener {
     private final GLJPanel gljPanel;
@@ -25,7 +24,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
     private Renderer renderer;
     private Viewport viewport;
     private Scene scene;
-    private Model model;
+    private Puma model;
 
     private final Vector2i lastMousePosition = new Vector2i();
     private Interpolation interpolation;
@@ -71,7 +70,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
                 new Vector3f(0, 0, 0), new Vector3f(0, 0, 0));
 
         try {
-            scene.setModel(model = ModelLoader.load("/models/", "teapot.obj"));
+            scene.setModel(model = new Puma());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -100,12 +99,12 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
         if(interpolation != null && leftInterpolation != null) {
             model.setModelMatrix(leftInterpolation.apply(interpolation, time));
         }
-        renderer.render(gl, scene, leftInterpolation, viewport.left());
+        renderer.render(gl, scene, viewport.left());
 
         if(interpolation != null && rightInterpolation != null) {
             model.setModelMatrix(rightInterpolation.apply(interpolation, time));
         }
-        renderer.render(gl, scene, rightInterpolation, viewport.right());
+        renderer.render(gl, scene, viewport.right());
     }
 
     @Override
@@ -224,6 +223,9 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
         time = 0.0f;
         this.interpolation = interpolation;
         scene.setInterpolation(interpolation);
+        Puma.Parameters params = model.inverseKinematics(interpolation.getStartPosition().x, interpolation.getStartPosition().y, interpolation.getStartPosition().z,
+                interpolation.getStartRotation().x, interpolation.getStartRotation().y, interpolation.getStartRotation().z);
+        model.set(params);
     }
 
     public void setShowKeyframes(boolean show, int frames) {

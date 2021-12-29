@@ -7,6 +7,7 @@ in VertexData {
 } fs_in;
 
 uniform vec3 viewPos;
+uniform vec3 color;
 
 const vec3 lightDir = vec3(0, -1, 0);
 const vec3 material = vec3(1, 1, 1);
@@ -22,5 +23,5 @@ void main() {
 
     float light = max(spec * specularStrength + dot(normal, -lightDir), 0.2);
 
-    FragColor = vec4(material * light, 1.0f);
+    FragColor = vec4(material * light * color, 1.0f);
 }

@@ -5,17 +5,17 @@ import org.joml.*;
 import pl.edu.pw.mini.cadcam.pusn.graphics.Camera;
 import pl.edu.pw.mini.cadcam.pusn.graphics.Renderer;
 
-import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Model {
+public class Model implements Renderable {
     protected List<Mesh> meshes = new ArrayList<>();
 
     private final Matrix4f modelMatrix;
     protected final AtomicBoolean loaded = new AtomicBoolean();
+    private final Vector3f color = new Vector3f(1);
 
     public Model(Collection<Mesh> meshes) {
         this.meshes.addAll(meshes);
@@ -47,12 +47,21 @@ public class Model {
         }
     }
 
-    protected void load(GL4 gl) {
+    public void load(GL4 gl) {
         meshes.forEach(mesh -> mesh.load(gl));
     }
 
     public void dispose(GL4 gl) {
         meshes.forEach(mesh -> mesh.dispose(gl));
         loaded.set(false);
+    }
+
+    @Override
+    public Vector3f getColor() {
+        return color;
+    }
+
+    public void setColor(Vector3f color) {
+        this.color.set(color);
     }
 }
