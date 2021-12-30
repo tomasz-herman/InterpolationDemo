@@ -78,10 +78,8 @@ public class Puma implements Renderable {
         ze.setColor(new Vector3f(0, 0.5f, 1));
         models = List.of(j1, a1, j2, a2, j3, a3, j4, a4, x1, y1, z1, x2, y2, z2, xe, ye, ze/**/);
         l1 = l2 = l3 = l4 = 3;
-        p1 = p2 = p3 = p4 = p5 = -PI / 6;
-        Parameters params = inverseKinematics(0, 0, 0, 0, 0, 0);
-        System.out.println(params);
-        set(params);
+        p1 = p2 = p3 = p4 = p5 = 0;
+        setMatrices();
     }
 
     @Override
@@ -321,28 +319,6 @@ public class Puma implements Renderable {
 
     public void setP5(float p5) {
         this.p5 = p5;
-    }
-
-    public Parameters inverseKinematics(float tx, float ty, float tz, float rx, float ry, float rz) {
-        Parameters r = new Parameters();
-        Matrix3f rot = new Matrix3f().rotateXYZ(rx, ry, rz);
-        Vector3f x = rot.getColumn(0, new Vector3f());
-        Vector3f y = rot.getColumn(1, new Vector3f());
-        Vector3f z = rot.getColumn(2, new Vector3f());
-        float x1 = x.x, x2 = x.y, x3 = x.z;
-        float y1 = y.x, y2 = y.y, y3 = y.z;
-        float z1 = z.x, z2 = z.y, z3 = z.z;
-        float p1 = tx, p2 = ty, p3 = tz;
-        r.p1 = atan2(p2 - l4 * x2, p1 - l4 * x1);
-        float s1 = sin(r.p1), c1 = cos(r.p1);
-        r.p4 = asin(c1 * x2 - s1 * x1);
-        float s4 = sin(r.p4), c4 = cos(r.p4);
-        r.p5 = atan2(s1 * z1 - c1 * z2, c1 * y2 - s1 * y1);
-        r.p2 = atan2(-(c1 * c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + s1 * s4)) , (c4 * (p1 - l4 * x1) - c1 * l3 * x3));
-        float s2 = sin(r.p2), c2 = cos(r.p2);
-        r.l2 = (c4 * (p1 - l4 * x1) - c1 * l3 * x3) / (c1 * c2 * c4);
-        r.p3 = atan2(-x3, (x.x + s1 * s4) / c1) - r.p2;
-        return r;
     }
 
     public Parameters inverseKinematics(Vector3f translation, Matrix3f rotation) {

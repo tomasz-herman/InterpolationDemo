@@ -27,12 +27,8 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
     private Puma model;
 
     private final Vector2i lastMousePosition = new Vector2i();
-    private Interpolation interpolation;
-    private float time = 0;
-    private float last = 0;
-
-    private BiFunction<Interpolation, Float, Matrix4f> leftInterpolation = Interpolation::interpolateEuler;
-    private BiFunction<Interpolation, Float, Matrix4f> rightInterpolation = Interpolation::interpolateSpherical;
+    private long time = 0;
+    private long last = 0;
 
     private boolean forward;
     private boolean backward;
@@ -65,17 +61,13 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
         scene = new Scene(new Camera(1, 0.1f, 100, 60));
         scene.getCamera().setPosition(-10, 2, 0);
 
-        interpolation = new Interpolation(0, 0,
-                new Vector3f(0, 0, 0), new Vector3f(0, 0, 0),
-                new Vector3f(0, 0, 0), new Vector3f(0, 0, 0));
-
         try {
             scene.setModel(model = new Puma());
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        last = System.nanoTime() / 1e9f;
+        last = System.nanoTime();
     }
 
     @Override
@@ -87,7 +79,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
 
     @Override
     public void display(GLAutoDrawable drawable) {
-        float now = System.nanoTime() / 1e9f;
+        long now = System.nanoTime();
         time += now - last;
         last = now;
         GL4 gl = drawable.getGL().getGL4();
@@ -95,10 +87,10 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
 
         renderer.clearColorAndDepth(gl);
 
-        model.interpolateEffector(time);
+        model.interpolateEffector(time / 1e9f);
         renderer.render(gl, scene, viewport.left());
 
-        model.interpolateParameters(time);
+        model.interpolateParameters(time / 1e9f);
         renderer.render(gl, scene, viewport.right());
     }
 
@@ -207,7 +199,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
     }
 
     public void setAnimation(Interpolation interpolation) {
-        time = 0.0f;
+        time = 0;
         model.setStartPosition(interpolation.startPosition());
         model.setEndPosition(interpolation.endPosition());
         model.setStartRotation(interpolation.startRotation());
