@@ -42,7 +42,7 @@ public class InterpolationController {
     private final Vector3f endPosition = new Vector3f();
     private float endTime;
 
-    public InterpolationController(Consumer<Interpolation> setAnimation, Consumer<BiFunction<Interpolation, Float, Matrix4f>> setRightInterpolation, Consumer<BiFunction<Interpolation, Float, Matrix4f>> setLeftInterpolation, BiConsumer<Boolean, Integer> setShowKeyframes) {
+    public InterpolationController(Consumer<Interpolation> setAnimation, BiConsumer<Boolean, Integer> setShowKeyframes) {
         $$$setupUI$$$();
         keyframesSpinner.setModel(new SpinnerNumberModel(0, 0, 1000, 1));
         startRotationButton.addActionListener(e -> new RotationController(startRotation::set, startRotationLabel::setText));

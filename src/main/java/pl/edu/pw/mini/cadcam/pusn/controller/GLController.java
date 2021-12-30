@@ -90,20 +90,15 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
         float now = System.nanoTime() / 1e9f;
         time += now - last;
         last = now;
-        scene.setTime(time);
         GL4 gl = drawable.getGL().getGL4();
         handleKeyInput();
 
         renderer.clearColorAndDepth(gl);
 
-        if(interpolation != null && leftInterpolation != null) {
-            model.setModelMatrix(leftInterpolation.apply(interpolation, time));
-        }
+        model.interpolateEffector(time);
         renderer.render(gl, scene, viewport.left());
 
-        if(interpolation != null && rightInterpolation != null) {
-            model.setModelMatrix(rightInterpolation.apply(interpolation, time));
-        }
+        model.interpolateParameters(time);
         renderer.render(gl, scene, viewport.right());
     }
 
@@ -211,21 +206,14 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
                 scene.getCamera().getFov() + 0.5f * e.getWheelRotation()));
     }
 
-    public void setLeftInterpolation(BiFunction<Interpolation, Float, Matrix4f> leftInterpolation) {
-        this.leftInterpolation = leftInterpolation;
-    }
-
-    public void setRightInterpolation(BiFunction<Interpolation, Float, Matrix4f> rightInterpolation) {
-        this.rightInterpolation = rightInterpolation;
-    }
-
     public void setAnimation(Interpolation interpolation) {
         time = 0.0f;
-        this.interpolation = interpolation;
-        scene.setInterpolation(interpolation);
-        Puma.Parameters params = model.inverseKinematics(interpolation.getStartPosition().x, interpolation.getStartPosition().y, interpolation.getStartPosition().z,
-                interpolation.getStartRotation().x, interpolation.getStartRotation().y, interpolation.getStartRotation().z);
-        model.set(params);
+        model.setStartPosition(interpolation.startPosition());
+        model.setEndPosition(interpolation.endPosition());
+        model.setStartRotation(interpolation.startRotation());
+        model.setEndRotation(interpolation.endRotation());
+        model.setStartTime(interpolation.startTime());
+        model.setEndTime(interpolation.endTime());
     }
 
     public void setShowKeyframes(boolean show, int frames) {
