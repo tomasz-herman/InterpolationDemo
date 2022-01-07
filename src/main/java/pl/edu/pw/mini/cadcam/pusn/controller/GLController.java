@@ -77,6 +77,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
         renderer.dispose(gl);
     }
 
+    Puma.Parameters hint = null;
     @Override
     public void display(GLAutoDrawable drawable) {
         long now = System.nanoTime();
@@ -87,7 +88,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
 
         renderer.clearColorAndDepth(gl);
 
-        model.interpolateEffector(time / 1e9f);
+        hint = model.interpolateEffector(time / 1e9f, hint);
         renderer.render(gl, scene, viewport.left());
 
         model.interpolateParameters(time / 1e9f);
@@ -200,6 +201,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
 
     public void setAnimation(Interpolation interpolation) {
         time = 0;
+        hint = null;
         model.setStartPosition(interpolation.startPosition());
         model.setEndPosition(interpolation.endPosition());
         model.setStartRotation(interpolation.startRotation());

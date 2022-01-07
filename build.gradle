@@ -30,6 +30,7 @@ def natives = "natives-linux"
 dependencies {
     implementation "org.lwjgl:lwjgl:$lwjglVersion"
     implementation "org.lwjgl:lwjgl-assimp:$lwjglVersion"
+    implementation 'org.junit.jupiter:junit-jupiter:5.8.1'
 
     runtimeOnly "org.lwjgl:lwjgl:$lwjglVersion:$natives"
     runtimeOnly "org.lwjgl:lwjgl-assimp:$lwjglVersion:$natives"

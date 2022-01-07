@@ -2,11 +2,13 @@ package pl.edu.pw.mini.cadcam.pusn.model;
 
 import com.jogamp.opengl.GL4;
 import org.joml.*;
+import org.joml.Math;
 import pl.edu.pw.mini.cadcam.pusn.graphics.Camera;
 import pl.edu.pw.mini.cadcam.pusn.graphics.Renderer;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import static com.jogamp.opengl.math.FloatUtil.*;
@@ -321,7 +323,18 @@ public class Puma implements Renderable {
         this.p5 = p5;
     }
 
-    public Parameters inverseKinematics(Vector3f translation, Matrix3f rotation) {
+    public Matrix4f forwardKinematics(Parameters hint) {
+        Matrix4f model = new Matrix4f();
+        model.rotateZ(p1);
+        model.translate(0, 0, l1).rotateY(p2);
+        model.translate(l2, 0, 0).rotateY(p3);
+        model.translate(0, 0, -l3).rotateZ(p4);
+        model.translate(l4, 0, 0).rotateX(p5);
+
+        return model;
+    }
+
+    public Parameters inverseKinematics(Vector3f translation, Matrix3f rotation, Parameters hint) {
         Parameters r = new Parameters();
         Vector3f x = rotation.getColumn(0, new Vector3f());
         Vector3f y = rotation.getColumn(1, new Vector3f());
@@ -330,16 +343,79 @@ public class Puma implements Renderable {
         float y1 = y.x, y2 = y.y, y3 = y.z;
         float z1 = z.x, z2 = z.y, z3 = z.z;
         float p1 = translation.x, p2 = translation.y, p3 = translation.z;
-        r.p1 = atan2(p2 - l4 * x2, p1 - l4 * x1);
+
+        if(hint == null) {
+            if(new Vector2f(p2 - l4 * x2, p1 - l4 * x1).length() < 1e-4) {
+                translation.add(disturbance());
+                return inverseKinematics(translation, rotation, null);
+            } else r.p1 = arctan((p2 - l4 * x2) / (p1 - l4 * x1), PI / 2);
+        } else {
+            if(new Vector2f(p2 - l4 * x2, p1 - l4 * x1).length() < 1e-4) {
+                translation.add(disturbance());
+                return inverseKinematics(translation, rotation, hint);
+            } else r.p1 = arctan((p2 - l4 * x2) / (p1 - l4 * x1), hint.p1);
+        }
         float s1 = sin(r.p1), c1 = cos(r.p1);
-        r.p4 = asin(c1 * x2 - s1 * x1);
+
+        if(hint == null) {
+            r.p4 = asin(c1 * x2 - s1 * x1);
+        } else {
+            r.p4 = arcsin(c1 * x2 - s1 * x1, hint.p4);
+        }
         float s4 = sin(r.p4), c4 = cos(r.p4);
-        r.p5 = atan2(s1 * z1 - c1 * z2, c1 * y2 - s1 * y1);
-        r.p2 = atan2(-(c1 * c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + s1 * s4)) , (c4 * (p1 - l4 * x1) - c1 * l3 * x3));
+
+        System.out.println((s1 * z1 - c1 * z2) / c4 + " " + (c1 * y2 - s1 * y1) / c4);
+        if(hint != null) r.p5 = arctan((s1 * z1 - c1 * z2) / (c1 * y2 - s1 * y1), hint.p5);
+        else r.p5 = atan2((s1 * z1 - c1 * z2), (c1 * y2 - s1 * y1)); // one solution
+
+        if(hint == null) {
+            if(new Vector2f(c1 * c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + s1 * s4), (c4 * (p1 - l4 * x1) - c1 * l3 * x3)).length() < 1e-4) {
+                translation.add(disturbance());
+                return inverseKinematics(translation, rotation, null);
+            }
+            else r.p2 = atan(-(c1 * c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + s1 * s4)) / (c4 * (p1 - l4 * x1) - c1 * l3 * x3));
+        } else {
+            if(new Vector2f(c1 * c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + s1 * s4), c4 * (p1 - l4 * x1) - c1 * l3 * x3).length() < 1e-8) {
+                translation.add(disturbance());
+                return inverseKinematics(translation, rotation, hint);
+            } else {
+                r.p2 = atan(-(c1 * c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + s1 * s4)) / (c4 * (p1 - l4 * x1) - c1 * l3 * x3));
+            }
+        }
         float s2 = sin(r.p2), c2 = cos(r.p2);
-        r.l2 = (c4 * (p1 - l4 * x1) - c1 * l3 * x3) / (c1 * c2 * c4);
-        r.p3 = atan2(-x3, (x.x + s1 * s4) / c1) - r.p2;
+
+        r.l2 = (c4 * (p1 - l4 * x1) - c1 * l3 * x3) / (c1 * c2 * c4); // one solution
+
+        r.p3 = atan2(-x3, (x.x + s1 * s4) / c1) - r.p2; // one solution
+
         return r;
+    }
+
+    public static Vector3f disturbance() {
+        Random random = new Random();
+        return new Vector3f((random.nextFloat() - 1) * 1e-4f, (random.nextFloat() - 1) * 1e-4f, (random.nextFloat() - 1) * 1e-4f);
+    }
+
+    public float arctan(float val, float hint) {
+        float t1 = atan(val);
+        float t2 = t1 + PI;
+        if(angleDist(t1, hint) < angleDist(t2, hint)) return t1;
+        else return t2;
+    }
+
+    public float arcsin(float val, float hint) {
+        float t1 = asin(val);
+        float t2 = t1 + PI;
+        if(angleDist(t1, hint) < angleDist(t2, hint)) return t1;
+        else return t2;
+    }
+
+    public static float angleDist(float a, float b) {
+        if (a < 0) a += 2 * PI;
+        if (b < 0) b += 2 * PI;
+        if (b - a > PI) b -= 2 * PI;
+        if (a - b > PI) a -= 2 * PI;
+        return Math.min(abs(a - b), abs(b - a));
     }
 
     public void set(Parameters p) {
@@ -400,22 +476,29 @@ public class Puma implements Renderable {
         endRotation.set(rotation);
     }
 
-    public void interpolateEffector(float time) {
+    public Parameters interpolateEffector(float time, Parameters hint) {
         float t = getStep(time);
+        if(hint != null && t == 1){
+            set(hint);
+            return hint;
+        }
         Quaternionf startQuaternion = new Quaternionf()
                 .rotateXYZ(startRotation.x, startRotation.y, startRotation.z);
         Quaternionf endQuaternion = new Quaternionf()
                 .rotateXYZ(endRotation.x, endRotation.y, endRotation.z);
         Quaternionf quaternion = startQuaternion.slerp(endQuaternion, t, new Quaternionf());
         Vector3f position = startPosition.lerp(endPosition, t, new Vector3f());
-        Parameters parameters = inverseKinematics(position, new Matrix3f().rotation(quaternion));
+        Matrix3f rotation = new Matrix3f().rotation(quaternion);
+        Parameters parameters = inverseKinematics(position, rotation, hint);
+        System.out.println(parameters);
         set(parameters);
+        return parameters;
     }
 
     public void interpolateParameters(float time) {
         float t = getStep(time);
-        Parameters start = inverseKinematics(startPosition, new Matrix3f().rotateXYZ(startRotation));
-        Parameters end = inverseKinematics(endPosition, new Matrix3f().rotateXYZ(endRotation));
+        Parameters start = inverseKinematics(startPosition, new Matrix3f().rotateXYZ(startRotation), null);
+        Parameters end = inverseKinematics(endPosition, new Matrix3f().rotateXYZ(endRotation), null);
         Parameters lerp = start.lerp(end, t, new Parameters());
         set(lerp);
     }
