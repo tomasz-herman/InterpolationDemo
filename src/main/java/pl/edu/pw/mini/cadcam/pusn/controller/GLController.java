@@ -3,10 +3,8 @@ package pl.edu.pw.mini.cadcam.pusn.controller;
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.awt.GLJPanel;
 import com.jogamp.opengl.util.FPSAnimator;
+import org.joml.*;
 import org.joml.Math;
-import org.joml.Matrix4f;
-import org.joml.Vector2i;
-import org.joml.Vector3f;
 import pl.edu.pw.mini.cadcam.pusn.graphics.*;
 import pl.edu.pw.mini.cadcam.pusn.graphics.Renderer;
 import pl.edu.pw.mini.cadcam.pusn.model.Model;
@@ -202,10 +200,10 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
     public void setAnimation(Interpolation interpolation) {
         time = 0;
         hint = null;
-        model.setStartPosition(interpolation.startPosition());
-        model.setEndPosition(interpolation.endPosition());
-        model.setStartRotation(interpolation.startRotation());
-        model.setEndRotation(interpolation.endRotation());
+        model.setStartPosition(new Vector3d(interpolation.startPosition()));
+        model.setEndPosition(new Vector3d(interpolation.endPosition()));
+        model.setStartRotation(new Vector3d(interpolation.startRotation()));
+        model.setEndRotation(new Vector3d(interpolation.endRotation()));
         model.setStartTime(interpolation.startTime());
         model.setEndTime(interpolation.endTime());
     }

@@ -2,8 +2,8 @@ package pl.edu.pw.mini.cadcam.pusn.model;
 
 import org.junit.jupiter.api.Test;
 
-import static com.jogamp.opengl.math.FloatUtil.PI;
-import static com.jogamp.opengl.math.FloatUtil.abs;
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PumaTest {
