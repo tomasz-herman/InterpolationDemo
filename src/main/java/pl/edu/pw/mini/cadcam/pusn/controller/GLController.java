@@ -16,6 +16,8 @@ import java.awt.event.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import static java.lang.Math.PI;
+
 public class GLController implements GLEventListener, MouseListener, MouseWheelListener, MouseMotionListener {
     private final GLJPanel gljPanel;
     private GLContext context;
@@ -34,6 +36,8 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
     private boolean left;
     private boolean up;
     private boolean down;
+
+    private boolean demo = false;
 
     public GLController(GLJPanel gljPanel) {
         this.gljPanel = gljPanel;
@@ -81,6 +85,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
         long now = System.nanoTime();
         time += now - last;
         last = now;
+        if(demo && time > (model.getEndTime() + 1) * 1_000_000_000) randParameters();
         GL4 gl = drawable.getGL().getGL4();
         handleKeyInput();
 
@@ -91,6 +96,17 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
 
         model.interpolateParameters(time / 1e9f);
         renderer.render(gl, scene, viewport.right());
+    }
+
+    public void randParameters() {
+        Random r = new Random();
+        time = 0;
+        model.setStartPosition(model.getEndPosition());
+        model.setEndPosition(new Vector3d(r.nextFloat() * 15 - 7.5, r.nextFloat() * 15 - 7.5, r.nextFloat() * 15 - 7.5));
+        model.setStartRotation(model.getEndRotation());
+        model.setEndRotation(new Vector3d(r.nextFloat() * 2 * PI, r.nextFloat() * 2 * PI, r.nextFloat() * 2 * PI));
+        model.setStartTime(0.5);
+        model.setEndTime(4.5);
     }
 
     @Override
@@ -211,5 +227,13 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
     public void setShowKeyframes(boolean show, int frames) {
         scene.setShowKeyframes(show);
         scene.setFrames(frames);
+    }
+
+    public boolean isDemo() {
+        return demo;
+    }
+
+    public void setDemo(boolean demo) {
+        this.demo = demo;
     }
 }

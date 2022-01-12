@@ -3,16 +3,13 @@ package pl.edu.pw.mini.cadcam.pusn.controller;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import pl.edu.pw.mini.cadcam.pusn.graphics.Interpolation;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.util.Objects;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import static com.jogamp.opengl.math.FloatUtil.PI;
@@ -34,6 +31,7 @@ public class InterpolationController {
     private JLabel endTimeLabel;
     private JLabel endPositionLabel;
     private JLabel endRotationLabel;
+    private JCheckBox demoCheckBox;
 
     private final Vector3f startRotation = new Vector3f();
     private final Vector3f startPosition = new Vector3f();
@@ -42,7 +40,7 @@ public class InterpolationController {
     private final Vector3f endPosition = new Vector3f();
     private float endTime;
 
-    public InterpolationController(Consumer<Interpolation> setAnimation, BiConsumer<Boolean, Integer> setShowKeyframes) {
+    public InterpolationController(Consumer<Interpolation> setAnimation, BiConsumer<Boolean, Integer> setShowKeyframes, Consumer<Boolean> setDemo) {
         $$$setupUI$$$();
         keyframesSpinner.setModel(new SpinnerNumberModel(0, 0, 1000, 1));
         startRotationButton.addActionListener(e -> new RotationController(startRotation::set, startRotationLabel::setText));
@@ -68,6 +66,7 @@ public class InterpolationController {
                 setAnimation.accept(new Interpolation(startTime, endTime, new Vector3f(startRotation), new Vector3f(endRotation), new Vector3f(startPosition), new Vector3f(endPosition)));
             }
         });
+        demoCheckBox.addActionListener(e -> setDemo.accept(demoCheckBox.isSelected()));
         keyframesSpinner.setModel(new SpinnerNumberModel(0, 0, 1000, 1));
         showKeyframesCheckbox.addActionListener(e -> setShowKeyframes.accept(showKeyframesCheckbox.isSelected(), ((Number) keyframesSpinner.getValue()).intValue()));
         keyframesSpinner.addChangeListener(e -> setShowKeyframes.accept(showKeyframesCheckbox.isSelected(), ((Number) keyframesSpinner.getValue()).intValue()));
@@ -86,9 +85,9 @@ public class InterpolationController {
      */
     private void $$$setupUI$$$() {
         mainPane = new JPanel();
-        mainPane.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
+        mainPane.setLayout(new GridLayoutManager(6, 1, new Insets(0, 0, 0, 0), -1, -1));
         final Spacer spacer1 = new Spacer();
-        mainPane.add(spacer1, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        mainPane.add(spacer1, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(6, 1, new Insets(0, 0, 0, 0), -1, -1));
         mainPane.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -135,7 +134,7 @@ public class InterpolationController {
         panel2.add(endTimeButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        mainPane.add(panel3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        mainPane.add(panel3, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel3.setBorder(BorderFactory.createTitledBorder(null, "keyframes", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         keyframesSpinner = new JSpinner();
         panel3.add(keyframesSpinner, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -144,7 +143,10 @@ public class InterpolationController {
         panel3.add(showKeyframesCheckbox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         interpolateButton = new JButton();
         interpolateButton.setText("Interpolate");
-        mainPane.add(interpolateButton, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        mainPane.add(interpolateButton, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        demoCheckBox = new JCheckBox();
+        demoCheckBox.setText("demo");
+        mainPane.add(demoCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

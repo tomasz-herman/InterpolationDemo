@@ -403,46 +403,64 @@ public class Puma implements Renderable {
 //    }
 
         public Parameters inverseKinematics(Vector3d translation, Matrix3d rotation) {
-        Parameters r = new Parameters();
-        Vector3d x = rotation.getColumn(0, new Vector3d());
-        Vector3d y = rotation.getColumn(1, new Vector3d());
-        Vector3d z = rotation.getColumn(2, new Vector3d());
-        double x1 = x.x, x2 = x.y, x3 = x.z;
-        double y1 = y.x, y2 = y.y, y3 = y.z;
-        double z1 = z.x, z2 = z.y, z3 = z.z;
-        double p1 = translation.x, p2 = translation.y, p3 = translation.z;
+            List<Parameters> r = new ArrayList<>();
+            Vector3d x = rotation.getColumn(0, new Vector3d());
+            Vector3d y = rotation.getColumn(1, new Vector3d());
+            Vector3d z = rotation.getColumn(2, new Vector3d());
+            double x1 = x.x, x2 = x.y, x3 = x.z;
+            double y1 = y.x, y2 = y.y, y3 = y.z;
+            double z1 = z.x, z2 = z.y, z3 = z.z;
+            double p1 = translation.x, p2 = translation.y, p3 = translation.z;
 
 
-        if(new Vector2d(p2 - l4 * x2, p1 - l4 * x1).length() < 1e-3) {
+            var a1 = arctan2((p2 - l4 * x2) / (p1 - l4 * x1));
+            Parameters params = new Parameters();
+            params.setP1(a1.getRight());
+            r.add(params);
+            params = new Parameters();
+            params.setP1(a1.getLeft());
+            r.add(params);
+
+            List<Parameters> r2 = new ArrayList<>();
+
+            for (Parameters p : r) {
+                var a4 = arcsin2((p.c1 * p2 - p.s1 * p1) / l4);
+                params = p.copy();
+                params.setP4(a4.getRight());
+                r2.add(params);
+                params = p.copy();
+                params.setP4(a4.getLeft());
+                r2.add(params);
+            }
+
+            for (Parameters p : r2) {
+                p.setP5(atan2((p.s1 * z1 - p.c1 * z2), (p.c1 * y2 - p.s1 * y1)));
+            }
+
+
+            List<Parameters> r3 = new ArrayList<>();
+            for (Parameters p : r2) {
+                var a2 = arctan2(-(p.c1 * p.c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + p.s1 * p.s4)) / (p.c4 * (p1 - l4 * x1) - p.c1 * l3 * x3));
+                params = p.copy();
+                params.setP2(a2.getRight());
+                r3.add(params);
+                params = p.copy();
+                params.setP2(a2.getLeft());
+                r3.add(params);
+            }
+
+            for (Parameters p : r3) {
+                p.setL2(abs((p.c4 * (p1 - l4 * x1) - p.c1 * l3 * x3) / (p.c1 * p.c2 * p.c4)));
+                p.setP3(atan2(-x3, (x.x + p.s1 * p.s4) / p.c1) - p.p2);
+            }
+
+            for (Parameters p : r3) {
+                if(!Double.isFinite(forwardKinematics(p).distance(translation)) || forwardKinematics(p).distance(translation) > 0.1) continue;
+                return p;
+            }
+
             translation.add(disturbance());
             return inverseKinematics(translation, rotation);
-        } else {
-            r.p1 = arctan((p2 - l4 * x2) / (p1 - l4 * x1), PI / 2);
-        }
-
-        double s1 = sin(r.p1), c1 = cos(r.p1);
-
-
-        r.p4 = asin(c1 * x2 - s1 * x1);
-
-        double s4 = sin(r.p4), c4 = cos(r.p4);
-
-        r.p5 = atan2((s1 * z1 - c1 * z2), (c1 * y2 - s1 * y1)); // one solution
-
-
-        if(new Vector2d(c1 * c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + s1 * s4), (c4 * (p1 - l4 * x1) - c1 * l3 * x3)).length() < 1e-3) {
-            translation.add(disturbance());
-            return inverseKinematics(translation, rotation);
-        }
-        else r.p2 = atan(-(c1 * c4 * (p3 - l4 * x3 - l1) + l3 * (x1 + s1 * s4)) / (c4 * (p1 - l4 * x1) - c1 * l3 * x3));
-
-        double s2 = sin(r.p2), c2 = cos(r.p2);
-
-        r.l2 = (c4 * (p1 - l4 * x1) - c1 * l3 * x3) / (c1 * c2 * c4); // one solution
-
-        r.p3 = atan2(-x3, (x.x + s1 * s4) / c1) - r.p2; // one solution
-
-        return r;
     }
 
     public Parameters inverseKinematics(Vector3d translation, Matrix3d rotation, Parameters hint) {
@@ -492,17 +510,22 @@ public class Puma implements Renderable {
             r3.add(params);
         }
 
+        List<Parameters> r4 = new ArrayList<>();
         for (Parameters p : r3) {
             p.setL2((p.c4 * (p1 - l4 * x1) - p.c1 * l3 * x3) / (p.c1 * p.c2 * p.c4));
-            p.setP3(atan2(-x3, (x.x + p.s1 * p.s4) / p.c1) - p.p2);
+            params = p.copy();
+            params.setP3(atan2(-x3, (x.x + p.s1 * p.s4) / p.c1) - p.p2);
+            r4.add(params);
+            params = p.copy();
+            params.setP3(-atan2(-x3, (x.x + p.s1 * p.s4) / p.c1) - p.p2);
+            r4.add(params);
         }
 
         Parameters result = null;
         double bestDist = Double.POSITIVE_INFINITY;
-        for (Parameters p : r3) {
-            if(forwardKinematics(p).distance(translation) > 0.1) continue;
+        for (Parameters p : r4) {
+            if(!Double.isFinite(forwardKinematics(p).distance(translation)) || forwardKinematics(p).distance(translation) > 0.2) continue;
             double dist = p.dist(hint);
-            System.out.println(p + " " + dist);
             if(dist < bestDist) {
                 bestDist = dist;
                 result = p;
