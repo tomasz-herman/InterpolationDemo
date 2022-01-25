@@ -336,6 +336,15 @@ public class Puma implements Renderable {
         return model.getTranslation(new Vector3d());
     }
 
+    public Vector3d forwardP3Kinematics(Parameters p) {
+        Matrix4d model = new Matrix4d();
+        model.rotateZ(p.p1);
+        model.translate(0, 0, l1).rotateY(p.p2);
+        model.translate(p.l2, 0, 0);
+
+        return model.getTranslation(new Vector3d());
+    }
+
 //    public Parameters inverseKinematics(Vector3d translation, Matrix3d rotation, Parameters hint) {
 //        Parameters r = new Parameters();
 //        Vector3d x = rotation.getColumn(0, new Vector3d());
@@ -531,6 +540,22 @@ public class Puma implements Renderable {
                 result = p;
             }
         }
+
+        if(bestDist > 5) {
+            result = null;
+            bestDist = Double.POSITIVE_INFINITY;
+            for (Parameters p : r4) {
+                if(!Double.isFinite(forwardKinematics(p).distance(translation)) || forwardKinematics(p).distance(translation) > 0.2) continue;
+                if(forwardP3Kinematics(p).distance(forwardP3Kinematics(hint)) > 0.5) continue;
+
+                double dist = p.dist(hint);
+                if(dist < bestDist) {
+                    bestDist = dist;
+                    result = p;
+                }
+            }
+        }
+
         if(result == null) return hint;
 
         return result;
@@ -542,43 +567,27 @@ public class Puma implements Renderable {
         return new Vector3d((random.nextFloat() - 1) * 1e-3f, (random.nextFloat() - 1) * 1e-3f, (random.nextFloat() - 1) * 1e-3f);
     }
 
-    public static Vector3d disturbance(double mag) {
-        Random random = new Random();
-        return new Vector3d((random.nextFloat() - 1) * mag, (random.nextFloat() - 1) * mag, (random.nextFloat() - 1) * mag);
-    }
-
-    public double arctan(double val, double hint) {
-        double t1 = atan(val);
-        double t2 = t1 + PI;
-        if(angleDist(t1, hint) < angleDist(t2, hint)) return t1;
-        else return t2;
-    }
-
     public Pair<Double, Double> arctan2(double val) {
-        double t1 = atan(val);
-        double t2 = t1 + PI;
+        double t1 = angle(atan(val));
+        double t2 = angle(t1 + PI);
         return Pair.of(t1, t2);
-    }
-
-    public double arcsin(double val, double hint) {
-        double t1 = asin(val);
-        double t2 = PI - t1;
-        if(angleDist(t1, hint) < angleDist(t2, hint)) return t1;
-        else return t2;
     }
 
     public Pair<Double, Double> arcsin2(double val) {
-        double t1 = asin(val);
-        double t2 = PI - t1;
+        double t1 = angle(asin(val));
+        double t2 = angle(PI - t1);
         return Pair.of(t1, t2);
     }
 
-    public static double angleDist(double a, double b) {
-        if (a < 0) a += 2 * PI;
-        if (b < 0) b += 2 * PI;
-        if (b - a > PI) b -= 2 * PI;
-        else if (a - b > PI) a -= 2 * PI;
-        return Math.min(abs(a - b), abs(b - a));
+    public static double angle(double a) {
+        while (a >= 2 * PI) a -= 2 * PI;
+        while (a < 0) a += 2 * PI;
+        return a;
+    }
+
+    public static double angleDist(double a, double b ) {
+        double diff = ( b - a + PI ) % (2 * PI) - PI;
+        return abs(diff < -PI ? diff + (2 * PI) : diff);
     }
 
     public void set(Parameters p) {
@@ -655,7 +664,6 @@ public class Puma implements Renderable {
         Parameters parameters;
         if(hint == null) parameters = inverseKinematics(position, rotation);
         else parameters = inverseKinematics(position, rotation, hint);
-        System.out.println(parameters);
         set(parameters);
         return parameters;
     }
@@ -762,25 +770,52 @@ public class Puma implements Renderable {
         }
 
         public Parameters lerp(Parameters parameters, double t, Parameters result) {
-            result.l2 = lerpFloat(l2, parameters.l2, t);
-            result.p1 = lerpAngle(p1, parameters.p1, t);
-            result.p2 = lerpAngle(p2, parameters.p2, t);
-            result.p3 = lerpAngle(p3, parameters.p3, t);
-            result.p4 = lerpAngle(p4, parameters.p4, t);
-            result.p5 = lerpAngle(p5, parameters.p5, t);
+            result.l2 = Lerp(l2, parameters.l2, t);
+            result.p1 = LerpRadians(p1, parameters.p1, t);
+            result.p2 = LerpRadians(p2, parameters.p2, t);
+            result.p3 = LerpRadians(p3, parameters.p3, t);
+            result.p4 = LerpRadians(p4, parameters.p4, t);
+            result.p5 = LerpRadians(p5, parameters.p5, t);
             return result;
         }
 
-        public double lerpFloat(double a, double b, double t) {
-            return a * (1 - t) + b * t;
+        double Lerp(double a, double b, double lerpFactor)
+        {
+            double result = ((1.f - lerpFactor) * a) + (lerpFactor * b);
+            return result;
         }
 
-        public double lerpAngle(double a, double b, double t) {
-            if (a < 0) a += 2 * PI;
-            if (b < 0) b += 2 * PI;
-            if (b - a > PI) b -= 2 * PI;
-            if (a - b > PI) a -= 2 * PI;
-            return a * (1 - t) + b * t;
+        double LerpRadians(double a, double b, double lerpFactor) // Lerps from angle a to b (both between 0.f and PI_TIMES_TWO), taking the shortest path
+        {
+            double result;
+            double diff = b - a;
+            if (diff < -PI)
+            {
+                // lerp upwards past PI_TIMES_TWO
+                b += 2 * PI;
+                result = Lerp(a, b, lerpFactor);
+                if (result >= 2 * PI)
+                {
+                    result -= 2 * PI;
+                }
+            }
+            else if (diff > PI)
+            {
+                // lerp downwards past 0
+                b -= 2 * PI;
+                result = Lerp(a, b, lerpFactor);
+                if (result < 0.f)
+                {
+                    result += 2 * PI;
+                }
+            }
+            else
+            {
+                // straight lerp
+                result = Lerp(a, b, lerpFactor);
+            }
+
+            return result;
         }
     }
 }
