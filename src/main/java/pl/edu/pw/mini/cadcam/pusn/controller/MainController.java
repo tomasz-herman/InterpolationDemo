@@ -26,7 +26,7 @@ public class MainController {
 
         GLController glController = new GLController(glPane);
 
-        InterpolationController interpolationController = new InterpolationController(glController::setAnimation, glController::setShowKeyframes, glController::setDemo);
+        InterpolationController interpolationController = new InterpolationController(glController::setAnimation);
         panel.add(interpolationController.getMainPane(), BorderLayout.CENTER);
 
     }

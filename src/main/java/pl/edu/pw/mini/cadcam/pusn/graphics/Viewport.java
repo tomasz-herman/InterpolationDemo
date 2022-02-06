@@ -14,6 +14,10 @@ public class Viewport {
         return new Viewport(x, y, width / 2, height);
     }
 
+    public Viewport full() {
+        return new Viewport(x, y, width, height);
+    }
+
     public Viewport right() {
         return new Viewport(x + width / 2, y, width / 2, height);
     }

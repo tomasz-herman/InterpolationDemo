@@ -7,16 +7,12 @@ import org.joml.*;
 import org.joml.Math;
 import pl.edu.pw.mini.cadcam.pusn.graphics.*;
 import pl.edu.pw.mini.cadcam.pusn.graphics.Renderer;
-import pl.edu.pw.mini.cadcam.pusn.model.Model;
-import pl.edu.pw.mini.cadcam.pusn.model.ModelLoader;
-import pl.edu.pw.mini.cadcam.pusn.model.Puma;
+import pl.edu.pw.mini.cadcam.pusn.model.Table;
 
 import javax.swing.*;
 import java.awt.event.*;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import static java.lang.Math.PI;
 
 public class GLController implements GLEventListener, MouseListener, MouseWheelListener, MouseMotionListener {
     private final GLJPanel gljPanel;
@@ -24,11 +20,9 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
     private Renderer renderer;
     private Viewport viewport;
     private Scene scene;
-    private Puma model;
+    private Table model;
 
     private final Vector2i lastMousePosition = new Vector2i();
-    private long time = 0;
-    private long last = 0;
 
     private boolean forward;
     private boolean backward;
@@ -36,8 +30,6 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
     private boolean left;
     private boolean up;
     private boolean down;
-
-    private boolean demo = false;
 
     public GLController(GLJPanel gljPanel) {
         this.gljPanel = gljPanel;
@@ -64,12 +56,10 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
         scene.getCamera().setPosition(-10, 2, 0);
 
         try {
-            scene.setModel(model = new Puma());
+            scene.setModel(model = new Table());
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        last = System.nanoTime();
     }
 
     @Override
@@ -79,34 +69,13 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
         renderer.dispose(gl);
     }
 
-    Puma.Parameters hint = null;
     @Override
     public void display(GLAutoDrawable drawable) {
-        long now = System.nanoTime();
-        time += now - last;
-        last = now;
-        if(demo && time > (model.getEndTime() + 1) * 1_000_000_000) randParameters();
         GL4 gl = drawable.getGL().getGL4();
         handleKeyInput();
 
         renderer.clearColorAndDepth(gl);
-
-        hint = model.interpolateEffector(time / 1e9f, hint);
-        renderer.render(gl, scene, viewport.left());
-
-        model.interpolateParameters(time / 1e9f);
-        renderer.render(gl, scene, viewport.right());
-    }
-
-    public void randParameters() {
-        Random r = new Random();
-        time = 0;
-        model.setStartPosition(model.getEndPosition());
-        model.setEndPosition(new Vector3d(r.nextFloat() * 15 - 7.5, r.nextFloat() * 15 - 7.5, r.nextFloat() * 15 - 7.5));
-        model.setStartRotation(model.getEndRotation());
-        model.setEndRotation(new Vector3d(r.nextFloat() * 2 * PI, r.nextFloat() * 2 * PI, r.nextFloat() * 2 * PI));
-        model.setStartTime(0.5);
-        model.setEndTime(4.5);
+        renderer.render(gl, scene, viewport.full());
     }
 
     @Override
@@ -213,27 +182,7 @@ public class GLController implements GLEventListener, MouseListener, MouseWheelL
                 scene.getCamera().getFov() + 0.5f * e.getWheelRotation()));
     }
 
-    public void setAnimation(Interpolation interpolation) {
-        time = 0;
-        hint = null;
-        model.setStartPosition(new Vector3d(interpolation.startPosition()));
-        model.setEndPosition(new Vector3d(interpolation.endPosition()));
-        model.setStartRotation(new Vector3d(interpolation.startRotation()));
-        model.setEndRotation(new Vector3d(interpolation.endRotation()));
-        model.setStartTime(interpolation.startTime());
-        model.setEndTime(interpolation.endTime());
-    }
-
-    public void setShowKeyframes(boolean show, int frames) {
-        scene.setShowKeyframes(show);
-        scene.setFrames(frames);
-    }
-
-    public boolean isDemo() {
-        return demo;
-    }
-
-    public void setDemo(boolean demo) {
-        this.demo = demo;
+    public void setAnimation(Table.Params params) {
+        model.setParams(params);
     }
 }
